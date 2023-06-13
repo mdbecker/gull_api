@@ -1,0 +1,42 @@
+MIT License with Additional Terms
+
+Copyright (c) 2023 Michael Becker
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+1. The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+2. Redistributions of the Software in source or binary form must retain the above
+copyright notice, this list of conditions, and the following disclaimer.
+
+3. Redistributions of the Software in source or binary form must include an
+attribution to the original author, Michael Becker, in a prominent location
+within the redistributed software or documentation.
+
+4. The Software shall not be used, directly or indirectly, in any military or
+surveillance applications, including but not limited to the development,
+production, or use of nuclear, missile, chemical, or biological weapons,
+or any other activities that may cause harm to individuals or groups.
+
+5. If the licensee violates any of the terms of this license, the licensor
+reserves the right to revoke this license for the licensee, and the licensee
+shall immediately cease all use of the Software.
+
+6. The licensee is permitted to combine the Software with code licensed under
+other open-source licenses, provided that the resulting combined work is
+licensed under a license that is compatible with this license and does not
+violate any of the terms of this license.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

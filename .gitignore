@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.virtualenv/
+
+# Visual Studio Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# macOS files
+.DS_Store
+
+# Logs and databases (SQLite)
+*.log
+*.sqlite3
