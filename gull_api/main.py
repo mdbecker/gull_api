@@ -1,9 +1,9 @@
+from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
+from typing import Dict, Any
 import json
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, Any
 
 app = FastAPI()
 executor = ThreadPoolExecutor(max_workers=5)  # Adjust the number of simultaneous requests
@@ -18,11 +18,14 @@ def create_llm_request_model(cli_json: Dict[str, Any]) -> BaseModel:
         field_kwargs = {"description": param["description"]}
         if "default" in param:
             field_kwargs["default"] = param["default"]
+        else:
+            if param.get('required', True) is False:
+                field_kwargs["default"] = None
         if "min" in param and "max" in param:
             field_kwargs["gt"] = param["min"]
             field_kwargs["lt"] = param["max"]
         fields[param["name"]] = (param["type"], Field(**field_kwargs))
-    return BaseModel.create("LLMRequest", **fields)
+    return create_model("LLMRequest", **fields)
 
 def convert_request_to_cli_command(request: BaseModel, cli_json: Dict[str, Any]) -> str:
     cli_args = []
@@ -66,13 +69,14 @@ def convert_cli_json_to_api_format(cli_json: Dict[str, Any]) -> Dict[str, Any]:
                 api_param["min"] = param["min"]
                 api_param["max"] = param["max"]
                 if param["type"] == "int" or param["type"] == "float":
-                    api_param["step"] = 1 if param["type"] == "int" else 0.01
+                    api_param["step"] = param.get("step", 1 if param["type"] == "int" else 0.01)  # respect "step" if provided in cli_json
+            if param.get("required", False):
+                api_param["required"] = param["required"]  # respect "required" if provided in cli_json
             api_json["LLaMA-7B"].append(api_param)
     return api_json
 
 @app.get("/api")
-def get_api():
-    cli_json = load_cli_json()
+def get_api(cli_json=Depends(load_cli_json)):
     api_json = convert_cli_json_to_api_format(cli_json)
     return api_json
 
