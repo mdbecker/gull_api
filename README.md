@@ -1,5 +1,9 @@
 # GULL-API
 
+![Docker Publish](https://github.com/mdbecker/gull_api/actions/workflows/docker-publish.yml/badge.svg)
+![Test](https://github.com/mdbecker/gull_api/actions/workflows/test.yml/badge.svg)
+
+
 GULL-API is a web application backend that can be used to run Large Language Models (LLMs). The interface between the front-end and the back-end is a JSON REST API.
 
 ## Features
