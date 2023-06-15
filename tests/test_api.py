@@ -13,34 +13,31 @@ cli_json = {'LLaMA-7B': [{'default': 'models/7B/ggml-model.bin',
        'description': 'Specify the path to the LLaMA model file (e.g., '
 		      'models/7B/ggml-model.bin).',
        'hidden': True,
-       'long': '--model',
        'name': 'Model',
        'nargs': 1,
        'required': True,
-       'short': '-m',
+       'flag': '-m',
        'type': 'str'},
       {'default': False,
        'description': 'Run the program in instruction mode, which is '
 		      'particularly useful when working with Alpaca '
 		      'models.',
-       'long': '--instruct',
        'name': 'Instruct mode',
-       'short': '-ins',
+       'flag': '-ins',
        'type': 'bool'},
       {'default': 128,
        'description': 'Set the number of tokens to predict when '
 		      'generating text. Adjusting this value can '
 		      'influence the length of the generated text.',
-       'long': '--n_predict',
        'max': 2048,
        'min': 1,
        'name': 'Maximum length',
        'nargs': 1,
-       'short': '-n',
+       'flag': '-n',
        'step': 10,
        'type': 'int'},
       {'description': 'Provide a prompt',
-       'long': '--prompt',
+       'flag': '--prompt',
        'name': 'Prompt',
        'nargs': 1,
        'required': True,
@@ -48,15 +45,14 @@ cli_json = {'LLaMA-7B': [{'default': 'models/7B/ggml-model.bin',
       {'description': 'Specify one or multiple reverse prompts to '
 		      'pause text generation and switch to interactive '
 		      'mode.',
-       'long': '--reverse-prompt',
        'name': 'Stop sequences',
        'nargs': 1,
        'required': False,
-       'short': '-r',
+       'flag': '-r',
        'type': 'str'},
       {'default': 0.8,
        'description': 'Adjust the randomness of the generated text.',
-       'long': '--temp',
+       'flag': '--temp',
        'max': 1,
        'min': 0,
        'name': 'Temperature',
@@ -66,7 +62,7 @@ cli_json = {'LLaMA-7B': [{'default': 'models/7B/ggml-model.bin',
        'description': 'Limit the next token selection to a subset of '
 		      'tokens with a cumulative probability above a '
 		      'threshold P.',
-       'long': '--top_p',
+       'flag': '--top_p',
        'max': 1,
        'min': 0,
        'name': 'Top P',
@@ -285,21 +281,23 @@ def test_convert_request_to_cli_command_with_non_bool():
     request = create_llm_request_model(cli_json)(test_param="value")
     assert convert_request_to_cli_command(request, cli_json) == ["./main", "--test", "value"]
 
-# @pytest.mark.asyncio
-# @pytest.mark.parametrize("invalid_request_data", [
-#     {"Top P": 0.5},  # Missing required field "Prompt"
-#     {"Prompt": "Once upon a time", "Top P": -0.5},  # Invalid value for "Top P"
-#     {"Prompt": "Once upon a time", "Top P": 1.5},  # Invalid value for "Top P"
-# ])
-# async def test_post_llm_invalid_request(invalid_request_data):
-#     # Replace this URL with the actual URL of your running API
-#     api_url = "http://localhost:8000/llm"
-# 
-#     async with httpx.AsyncClient() as client:
-#         response = await client.post(api_url, json=invalid_request_data)
-# 
-#     assert response.status_code == 422  # Unprocessable Entity
-
+def test_convert_request_to_cli_command_with_executable():
+    cli_json = {
+        "LLaMA-7B": [
+            {
+                "name": "Executable",
+                "default": "./custom_main",
+            },
+            {
+                "name": "test_param",
+                "type": "str",
+                "flag": "--test",
+                "description": "test parameter",
+            }
+        ]
+    }
+    request = create_llm_request_model(cli_json)(test_param="value")
+    assert convert_request_to_cli_command(request, cli_json) == ["./custom_main", "--test", "value"]
 
 # Mocked cli.json data
 mock_cli_json = {

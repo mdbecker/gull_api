@@ -18,6 +18,9 @@ def load_cli_json():
 def create_llm_request_model(cli_json: Dict[str, Any]) -> BaseModel:
     fields = {}
     for param in cli_json[get_single_key(cli_json)]:
+        param_name = param["name"]
+        if param_name == "Executable":  # skip Executable since it's not used by the api
+            continue
         field_kwargs = {"description": param["description"]}
         if "default" in param:
             field_kwargs["default"] = param["default"]
@@ -32,8 +35,12 @@ def create_llm_request_model(cli_json: Dict[str, Any]) -> BaseModel:
 
 def convert_request_to_cli_command(request: BaseModel, cli_json: Dict[str, Any]) -> str:
     cli_args = []
+    command = ["./main"]  # default executable
     for param in cli_json[get_single_key(cli_json)]:
         param_name = param["name"]
+        if param_name == "Executable":  # if parameter is the executable
+            command = [param.get("default", "./main")]  # use default value or fallback to "./main"
+            continue
         if param_name in request.dict():
             value = request.dict()[param_name]
             flag = param["flag"]
@@ -43,7 +50,7 @@ def convert_request_to_cli_command(request: BaseModel, cli_json: Dict[str, Any])
             else:
                 cli_args.append(flag)
                 cli_args.append(str(value))
-    command = ["./main"] + cli_args
+    command += cli_args
     return command
 
 def process_request(request: BaseModel, cli_json: Dict[str, Any]) -> Dict[str, Any]:
