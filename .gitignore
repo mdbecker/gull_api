@@ -25,3 +25,9 @@ env/
 # Logs and databases (SQLite)
 *.log
 *.sqlite3
+
+# Coverage files
+.coverage
+
+# Poetry lock file
+poetry.lock
