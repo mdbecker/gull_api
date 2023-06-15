@@ -8,13 +8,16 @@ import subprocess
 app = FastAPI()
 executor = ThreadPoolExecutor(max_workers=5)  # Adjust the number of simultaneous requests
 
+def get_single_key(dictionary: Dict[str, Any]) -> str:
+    return list(dictionary.keys())[0]
+
 def load_cli_json():
     with open("cli.json", "r") as f:
         return json.load(f)
 
 def create_llm_request_model(cli_json: Dict[str, Any]) -> BaseModel:
     fields = {}
-    for param in cli_json["LLaMA-7B"]:
+    for param in cli_json[get_single_key(cli_json)]:
         field_kwargs = {"description": param["description"]}
         if "default" in param:
             field_kwargs["default"] = param["default"]
@@ -29,7 +32,7 @@ def create_llm_request_model(cli_json: Dict[str, Any]) -> BaseModel:
 
 def convert_request_to_cli_command(request: BaseModel, cli_json: Dict[str, Any]) -> str:
     cli_args = []
-    for param in cli_json["LLaMA-7B"]:
+    for param in cli_json[get_single_key(cli_json)]:
         param_name = param["name"]
         if param_name in request.dict():
             value = request.dict()[param_name]
@@ -55,8 +58,9 @@ def process_request(request: BaseModel, cli_json: Dict[str, Any]) -> Dict[str, A
     return json.loads(result.stdout)
 
 def convert_cli_json_to_api_format(cli_json: Dict[str, Any]) -> Dict[str, Any]:
-    api_json = {"LLaMA-7B": []}
-    for param in cli_json["LLaMA-7B"]:
+    key = get_single_key(cli_json)
+    api_json = {key: []}
+    for param in cli_json[key]:
         if not param.get("hidden", False):
             api_param = {
                 "name": param["name"],
@@ -72,7 +76,7 @@ def convert_cli_json_to_api_format(cli_json: Dict[str, Any]) -> Dict[str, Any]:
                     api_param["step"] = param.get("step", 1 if param["type"] == "int" else 0.01)  # respect "step" if provided in cli_json
             if param.get("required", False):
                 api_param["required"] = param["required"]  # respect "required" if provided in cli_json
-            api_json["LLaMA-7B"].append(api_param)
+            api_json[key].append(api_param)
     return api_json
 
 @app.get("/api")
