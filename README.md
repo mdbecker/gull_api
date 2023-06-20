@@ -29,6 +29,18 @@ GULL-API is a web application backend that can be used to run Large Language Mod
 
 The API will be available at `http://localhost:8000`.
 
+### Docker Test Mode
+
+To build and run the Docker container in test mode, use the following commands:
+
+```bash
+docker build -t gull-api .
+docker run -v ./example_cli.json:/app/cli.json -p 8000:8000 gull-api
+```
+
+In test mode, an included script echo_args.sh is used instead of a real LLM. This script echoes the arguments it receives, which can be helpful for local testing.
+
+
 ### Local Installation
 
 1. Clone the repository:
@@ -81,6 +93,17 @@ Content-Type: application/json
   "Top P": 0.5
 }
 ```
+
+### Example Requests
+
+```bash
+curl -X POST "http://localhost:8000/llm" -H  "accept: application/json" -H  "Content-Type: application/json" -d "{\"Instruct mode\":false, \"Maximum length\":256, \"Prompt\":\"Hello, world\", \"Stop sequences\":\"Goodbye, world\", \"Temperature\":0.7, \"Top P\":0.95}"
+curl -X GET "http://localhost:8000/api" -H "accept: application/json" | python -mjson.tool
+```
+
+### Example CLI JSON
+
+An example CLI JSON file is provided in the repository as `example_cli.json`. This file provides an example of the expected structure for defining the command-line arguments for the LLM.
 
 ## License
 

@@ -16,6 +16,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy the application code to the working directory
 COPY gull_api/ ./gull_api
 
+# Copy the mock LLM cli app to the working directory
+COPY echo_args.sh ./
+
 # Expose the port the app runs on
 EXPOSE 8000
 

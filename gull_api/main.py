@@ -62,7 +62,7 @@ def process_request(request: BaseModel, cli_json: Dict[str, Any]) -> Dict[str, A
     
     if result.returncode != 0:
         raise HTTPException(status_code=400, detail=result.stderr.decode("utf-8"))
-    return json.loads(result.stdout)
+    return {'response': result.stdout.decode("utf-8")}  # decode stdout to a string
 
 def convert_cli_json_to_api_format(cli_json: Dict[str, Any]) -> Dict[str, Any]:
     key = get_single_key(cli_json)
@@ -95,4 +95,5 @@ def get_api(cli_json=Depends(load_cli_json)):
 def post_llm(request: Dict[str, Any], cli_json=Depends(load_cli_json)):
     LLMRequest = create_llm_request_model(cli_json)
     validated_request = LLMRequest(**request)
-    return executor.submit(process_request, validated_request, cli_json)
+    future = executor.submit(process_request, validated_request, cli_json)
+    return future.result()  # block until task is complete and return the result

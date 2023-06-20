@@ -1,0 +1,73 @@
+{
+    "LLaMA-7B": [
+        {
+            "name": "Executable",
+            "hidden": true,
+            "default": "./echo_args.sh"
+        },
+        {
+            "default": "models/7B/ggml-model.bin",
+            "description": "Specify the path to the LLaMA model file (e.g., models/7B/ggml-model.bin).",
+            "hidden": true,
+            "name": "Model",
+            "nargs": 1,
+            "required": true,
+            "flag": "-m",
+            "type": "str"
+        },
+        {
+            "default": false,
+            "description": "Run the program in instruction mode, which is particularly useful when working with Alpaca models.",
+            "name": "Instruct mode",
+            "flag": "-ins",
+            "type": "bool"
+        },
+        {
+            "default": 128,
+            "description": "Set the number of tokens to predict when generating text. Adjusting this value can influence the length of the generated text.",
+            "max": 2048,
+            "min": 1,
+            "name": "Maximum length",
+            "nargs": 1,
+            "flag": "-n",
+            "step": 10,
+            "type": "int"
+        },
+        {
+            "description": "Provide a prompt",
+            "flag": "--prompt",
+            "name": "Prompt",
+            "nargs": 1,
+            "required": true,
+            "type": "str"
+        },
+        {
+            "description": "Specify one or multiple reverse prompts to pause text generation and switch to interactive mode.",
+            "name": "Stop sequences",
+            "nargs": 1,
+            "required": false,
+            "flag": "-r",
+            "type": "str"
+        },
+        {
+            "default": 0.8,
+            "description": "Adjust the randomness of the generated text.",
+            "flag": "--temp",
+            "max": 1,
+            "min": 0,
+            "name": "Temperature",
+            "nargs": 1,
+            "type": "float"
+        },
+        {
+            "default": 0.9,
+            "description": "Limit the next token selection to a subset of tokens with a cumulative probability above a threshold P.",
+            "flag": "--top_p",
+            "max": 1,
+            "min": 0,
+            "name": "Top P",
+            "nargs": 1,
+            "type": "float"
+        }
+    ]
+}

@@ -203,7 +203,7 @@ def test_process_request_valid_run(mock_run):
             self.stderr = stderr.encode('utf-8')
             self.returncode = returncode
 
-    mock_run.return_value = MockCompletedProcess(stdout='{"response": "OK"}')
+    mock_run.return_value = MockCompletedProcess(stdout='OK')
 
     sample_request = BaseModel()
     result = process_request(sample_request, cli_json)
@@ -320,4 +320,65 @@ def test_post_llm(mock_executor):
     mock_executor.submit.assert_called_once_with(main.process_request, validated_request, mock_cli_json)
     
     # Assert the result is the Future returned by executor.submit
-    assert result == mock_executor.submit.return_value
+    assert result == mock_executor.submit.return_value.result.return_value
+
+def test_get_api_with_executable():
+    expected_api_json = {
+        "LLaMA-7B": [
+            {
+                "name": "Instruct mode",
+                "type": "bool",
+                "default": False,
+                "description": "Run the program in instruction mode, which is particularly useful when working with Alpaca models."
+            },
+            {
+                "name": "Maximum length",
+                "type": "int",
+                "default": 128,
+                "description": "Set the number of tokens to predict when generating text. Adjusting this value can influence the length of the generated text.",
+                "min": 1,
+                "max": 2048,
+                "step": 10
+            },
+            {
+                "name": "Prompt",
+                "type": "str",
+                "required": True,
+                "description": "Provide a prompt"
+            },
+            {
+                "name": "Stop sequences",
+                "type": "str",
+                "description": "Specify one or multiple reverse prompts to pause text generation and switch to interactive mode."
+            },
+            {
+                "name": "Temperature",
+                "type": "float",
+                "default": 0.8,
+                "description": "Adjust the randomness of the generated text.",
+                "min": 0,
+                "max": 1,
+                "step": 0.01
+            },
+            {
+                "name": "Top P",
+                "type": "float",
+                "default": 0.9,
+                "description": "Limit the next token selection to a subset of tokens with a cumulative probability above a threshold P.",
+                "min": 0,
+                "max": 1,
+                "step": 0.01
+            }
+        ]
+    }
+
+    cli_json_with_executable = cli_json.copy()
+    cli_json_with_executable['LLaMA-7B'] = [
+            {
+                "default": "./echo_args.sh",
+                "hidden": True,
+                "name": "Executable",
+            },
+        ] + cli_json_with_executable['LLaMA-7B']
+    api_json = get_api(cli_json_with_executable)
+    assert api_json == expected_api_json
