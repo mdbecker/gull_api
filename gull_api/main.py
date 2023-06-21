@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, create_model
 from typing import Dict, Any
 import json
 import subprocess
+import asyncio
 
 app = FastAPI()
 executor = ThreadPoolExecutor(max_workers=5)  # Adjust the number of simultaneous requests
@@ -53,17 +54,6 @@ def convert_request_to_cli_command(request: BaseModel, cli_json: Dict[str, Any])
     command += cli_args
     return command
 
-def process_request(request: BaseModel, cli_json: Dict[str, Any]) -> Dict[str, Any]:
-    command = convert_request_to_cli_command(request, cli_json)
-    try:
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)  # Set the desired timeout value
-    except subprocess.TimeoutExpired:
-        raise HTTPException(status_code=408, detail="Request timed out.")
-    
-    if result.returncode != 0:
-        raise HTTPException(status_code=400, detail=result.stderr.decode("utf-8"))
-    return {'response': result.stdout.decode("utf-8")}  # decode stdout to a string
-
 def convert_cli_json_to_api_format(cli_json: Dict[str, Any]) -> Dict[str, Any]:
     key = get_single_key(cli_json)
     api_json = {key: []}
@@ -92,8 +82,21 @@ def get_api(cli_json=Depends(load_cli_json)):
     return api_json
 
 @app.post("/llm")
-def post_llm(request: Dict[str, Any], cli_json=Depends(load_cli_json)):
+async def post_llm(request: Dict[str, Any], cli_json=Depends(load_cli_json)):
     LLMRequest = create_llm_request_model(cli_json)
     validated_request = LLMRequest(**request)
-    future = executor.submit(process_request, validated_request, cli_json)
-    return future.result()  # block until task is complete and return the result
+    command = convert_request_to_cli_command(validated_request, cli_json)
+
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+
+        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=60)
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=408, detail="Request timed out.")
+
+    if process.returncode != 0:
+        raise HTTPException(status_code=400, detail=stderr.decode("utf-8"))
+
+    return {'response': stdout.decode("utf-8")}
