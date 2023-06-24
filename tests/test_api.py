@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from gull_api.main import get_api, create_llm_request_model, convert_request_to_cli_command, load_cli_json
+from gull_api.db import SessionManager, APIRequestLog
 from pydantic import BaseModel
 from typing import Dict, Any
 from unittest import mock
@@ -8,6 +9,18 @@ import json
 import pytest
 import subprocess
 from asyncio import TimeoutError
+
+@pytest.fixture
+def mock_db(monkeypatch):
+    mock_engine = mock.MagicMock()
+    mock_session_maker = mock.MagicMock()
+    mock_session = mock.MagicMock()
+
+    monkeypatch.setattr('gull_api.db.get_engine', lambda: mock_engine)
+    monkeypatch.setattr('gull_api.db.get_session_maker', lambda engine=None: mock_session_maker)
+    monkeypatch.setattr(mock_session_maker, 'return_value', mock_session)
+
+    return mock_session
 
 cli_json = {'LLaMA-7B': [{'default': 'models/7B/ggml-model.bin',
        'description': 'Specify the path to the LLaMA model file (e.g., '
@@ -336,7 +349,7 @@ sample_llm_request = {
 
 @pytest.mark.asyncio
 @mock.patch('asyncio.create_subprocess_exec')
-async def test_post_llm_valid_run(mock_create_subprocess_exec):
+async def test_post_llm_valid_run(mock_create_subprocess_exec, mock_db):
     class MockProcess:
         def __init__(self, stdout='', stderr='', returncode=0):
             self.stdout = stdout.encode('utf-8')
@@ -355,7 +368,7 @@ async def test_post_llm_valid_run(mock_create_subprocess_exec):
 
 @pytest.mark.asyncio
 @mock.patch('asyncio.create_subprocess_exec')
-async def test_post_llm_run_with_errors(mock_create_subprocess_exec):
+async def test_post_llm_run_with_errors(mock_create_subprocess_exec, mock_db):
     class MockProcess:
         def __init__(self, stdout='', stderr='', returncode=0):
             self.stdout = stdout.encode('utf-8')
@@ -370,14 +383,16 @@ async def test_post_llm_run_with_errors(mock_create_subprocess_exec):
     with pytest.raises(HTTPException) as exc_info:
         await main.post_llm(sample_llm_request, cli_json)
 
-    assert exc_info.value.status_code == 400
+    assert exc_info.value.status_code == 422 
     assert exc_info.value.detail == 'Error occurred'
 
 @pytest.mark.asyncio
 @mock.patch('asyncio.create_subprocess_exec')
-async def test_post_llm_timeout(mock_create_subprocess_exec):
+async def test_post_llm_timeout(mock_create_subprocess_exec, mock_db):
     # Set up the mock process to raise an exception when communicate is called
     class TimeoutMockProcess:
+        returncode = 1
+
         async def communicate(self):
             raise TimeoutError
 
@@ -386,8 +401,26 @@ async def test_post_llm_timeout(mock_create_subprocess_exec):
     with pytest.raises(HTTPException) as exc_info:
         await main.post_llm(sample_llm_request, cli_json)
 
-    assert exc_info.value.status_code == 408
-    assert exc_info.value.detail == 'Request timed out.'
+    assert exc_info.value.status_code == 504
+    assert exc_info.value.detail == 'Server processing timed out.'
+
+@pytest.mark.asyncio
+@mock.patch('asyncio.create_subprocess_exec')
+async def test_post_llm_generic_exception(mock_create_subprocess_exec, mock_db):
+    # Setup the mock process to raise an exception when communicate is called
+    class GenericExceptionMockProcess:
+        returncode = 1
+
+        async def communicate(self):
+            raise Exception("Generic exception occurred")
+
+    mock_create_subprocess_exec.return_value = GenericExceptionMockProcess()
+
+    with pytest.raises(HTTPException) as exc_info:
+        await main.post_llm(sample_llm_request, cli_json)
+
+    assert exc_info.value.status_code == 500
+    assert exc_info.value.detail == "Internal Server Error"
 
 # Mocked request data
 mock_request = {"test_param": "test_value"}
@@ -396,7 +429,7 @@ mock_request = {"test_param": "test_value"}
 @mock.patch('gull_api.main.create_llm_request_model')
 @mock.patch('gull_api.main.convert_request_to_cli_command')
 @mock.patch('asyncio.create_subprocess_exec', new_callable=mock.AsyncMock)
-async def test_post_llm(mock_create_subprocess_exec, mock_convert_request_to_cli_command, mock_create_llm_request_model):
+async def test_post_llm(mock_create_subprocess_exec, mock_convert_request_to_cli_command, mock_create_llm_request_model, mock_db):
     # Mock the process communicate function
     process_mock = mock.AsyncMock()
     process_mock.communicate = mock.AsyncMock(return_value=(b'OK', b''))

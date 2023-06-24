@@ -35,7 +35,7 @@ To build and run the Docker container in test mode, use the following commands:
 
 ```bash
 docker build -t gull-api .
-docker run -v ./example_cli.json:/app/cli.json -p 8000:8000 gull-api
+docker run -v $(pwd)/data:/app/data -v $(pwd)/example_cli.json:/app/cli.json -p 8000:8000 gull-api
 ```
 
 In test mode, an included script echo_args.sh is used instead of a real LLM. This script echoes the arguments it receives, which can be helpful for local testing.

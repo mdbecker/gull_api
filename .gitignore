@@ -31,3 +31,6 @@ env/
 
 # Poetry lock file
 poetry.lock
+
+# data directory to ignore
+data/

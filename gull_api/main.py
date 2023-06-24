@@ -5,6 +5,7 @@ from typing import Dict, Any
 import json
 import subprocess
 import asyncio
+from gull_api.db import APIRequestLog, SessionManager
 
 app = FastAPI()
 executor = ThreadPoolExecutor(max_workers=5)  # Adjust the number of simultaneous requests
@@ -81,22 +82,56 @@ def get_api(cli_json=Depends(load_cli_json)):
     api_json = convert_cli_json_to_api_format(cli_json)
     return api_json
 
+async def create_log_object(request, stdout, stderr, returncode):
+    return APIRequestLog(
+        request=str(request),
+        response=stdout if returncode == 0 else None,
+        error_occurred=returncode != 0,
+        error_details=stderr if returncode != 0 else None,
+    )
+
+# Helper function to create and log the API request
+async def create_and_log(request, stdout="", stderr="", returncode=0):
+    log = await create_log_object(request, stdout, stderr, returncode)
+    with SessionManager(log) as session:
+        pass
+    return log
+
+async def handle_error(request, status_code, detail, stderr="", returncode=1):
+    """
+    Generic error handling function to log and raise HTTPException.
+    
+    Args:
+        request (Dict): The request data.
+        status_code (int): HTTP status code to be returned.
+        detail (str): Detailed error message.
+        stderr (str, optional): Standard error stream. Defaults to "".
+        returncode (int, optional): Return code of the process. Defaults to 1.
+    """
+    log = await create_and_log(request, stderr=stderr, returncode=returncode)
+    raise HTTPException(status_code=status_code, detail=detail)
+
+# Updated post_llm function
 @app.post("/llm")
 async def post_llm(request: Dict[str, Any], cli_json=Depends(load_cli_json)):
     LLMRequest = create_llm_request_model(cli_json)
     validated_request = LLMRequest(**request)
     command = convert_request_to_cli_command(validated_request, cli_json)
-
+    
     try:
-        process = await asyncio.create_subprocess_exec(
-            *command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-
-        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=60)
+        process = await asyncio.create_subprocess_exec(*command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout_bytes, stderr_bytes = await asyncio.wait_for(process.communicate(), timeout=60)
+        stdout = stdout_bytes.decode("utf-8")
+        stderr = stderr_bytes.decode("utf-8")
     except asyncio.TimeoutError:
-        raise HTTPException(status_code=408, detail="Request timed out.")
-
-    if process.returncode != 0:
-        raise HTTPException(status_code=400, detail=stderr.decode("utf-8"))
-
-    return {'response': stdout.decode("utf-8")}
+        await handle_error(request, status_code=504, detail="Server processing timed out.", returncode=process.returncode)
+    except Exception as e:
+        await handle_error(request, status_code=500, detail="Internal Server Error", stderr=str(e), returncode=process.returncode)
+    else:
+        if process.returncode != 0:
+            await handle_error(request, status_code=422, detail=stderr, stderr=stderr, returncode=process.returncode)
+    
+    # Logging successful response
+    await create_and_log(request, stdout=stdout, returncode=process.returncode)
+    
+    return {'response': stdout}

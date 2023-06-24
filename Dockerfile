@@ -4,6 +4,9 @@ FROM python:3.10-slim
 # Set the working directory
 WORKDIR /app
 
+# Create a directory for the database
+RUN mkdir /app/data
+
 # Copy the pyproject.toml file to the working directory
 COPY pyproject.toml .
 
