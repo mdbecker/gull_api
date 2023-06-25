@@ -1,4 +1,4 @@
-name: Test on push or PR
+name: Test
 
 on:
   push:
