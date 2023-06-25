@@ -13,6 +13,7 @@ jobs:
     uses: ./.github/workflows/run_test.yml
     
   pypi-publish:
+    needs: run-test
     runs-on: ubuntu-latest
     
     steps:
