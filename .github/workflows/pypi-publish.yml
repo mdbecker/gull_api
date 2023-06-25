@@ -1,4 +1,4 @@
-name: Docker Publish
+name: PyPI Publish
 
 on:
   release:
@@ -12,14 +12,14 @@ jobs:
   test:
     uses: ./.github/workflows/run_test.yml@main
     
-  docker-publish:
+  pypi-publish:
     needs: [test]
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Check out repository
       uses: actions/checkout@v3
-
+      
     - name: Extract release version
       id: release-version
       run: echo "::set-output name=version::${{ github.event.release.tag_name }}"
@@ -33,24 +33,20 @@ jobs:
           echo "Invalid version format. Should be semantic versioning."
           exit 1
         fi
+      
+    - name: Install Poetry
+      uses: snok/install-poetry@v1.2
+      
+    - name: Build Python package
+      run: poetry build
+      
+    - name: Publish to PyPI
+      env:
+        PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      run: poetry publish --username=__token__ --password=$PYPI_TOKEN
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Extract metadata (tags, labels) for Docker
-      id: meta
-      uses: docker/metadata-action@v4
-      with:
-        images: ghcr.io/${{ github.repository_owner }}/gull-api
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+    - name: Validate package on PyPI
+      run: |
+        PACKAGE_NAME="gull-api"
+        PACKAGE_VERSION="${{ steps.release-version.outputs.version }}"
+        curl --head --fail "https://pypi.org/project/${PACKAGE_NAME}/${PACKAGE_VERSION}/"

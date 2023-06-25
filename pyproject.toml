@@ -1,12 +1,39 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["poetry-core"]
 
 [tool.poetry]
 name = "gull-api"
-version = "0.1.0"
+version = "VERSION_PLACEHOLDER"
 description = "A REST API for running Large Language Models"
-authors = ["Michael Becker <michael.becker@uphs.upenn.edu>"]
+authors = ["Michael Becker <mdbecker@gmail.com>"]
 license = "MIT"
+homepage = "https://github.com/mdbecker/gull_api"
+repository = "https://github.com/mdbecker/gull_api"
+documentation = "https://github.com/mdbecker/gull_api/blob/main/README.md"
+readme = "README.md"
+keywords = [
+    "api", "artificial-intelligence", "automation", "bot", "deep-learning",
+    "fastapi", "GPT", "language-models", "large-language-models",
+    "machine-learning", "microservices", "natural-language-processing", "NLP",
+    "openai", "REST", "text", "text-generation", "web-api"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "License :: Other/Proprietary License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing",
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
