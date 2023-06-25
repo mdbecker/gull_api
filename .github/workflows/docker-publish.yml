@@ -29,7 +29,7 @@ jobs:
         # Replacing the placeholder version with the actual version from the tag
         sed -i "s/version = \"0.0.0\"/version = \"${{ steps.release-version.outputs.version }}\"/" pyproject.toml
         # Validate that the version follows semantic versioning
-        if ! echo "${{ steps.release-version.outputs.version }}" | grep -Pq '^\d+(\.\d+){2}'; then
+        if ! echo "${{ steps.release-version.outputs.version }}" | grep -Pq '^\d+(\.\d+){2}(-rc\.\d+)?$'; then
           echo "Invalid version format. Should be semantic versioning."
           exit 1
         fi
@@ -46,6 +46,10 @@ jobs:
       uses: docker/metadata-action@v4
       with:
         images: ghcr.io/${{ github.repository_owner }}/gull-api
+        # Include release candidate tag if it's an RC version
+        tags: |
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}.{{patch}}-${{ steps.release-version.outputs.version }},value=rc
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v4

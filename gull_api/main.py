@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel, Field, create_model
 from typing import Dict, Any
@@ -8,7 +7,6 @@ import asyncio
 from gull_api.db import APIRequestLog, SessionManager
 
 app = FastAPI()
-executor = ThreadPoolExecutor(max_workers=5)  # Adjust the number of simultaneous requests
 
 def get_single_key(dictionary: Dict[str, Any]) -> str:
     return list(dictionary.keys())[0]

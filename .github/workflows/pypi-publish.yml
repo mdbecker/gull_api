@@ -11,41 +11,59 @@ permissions:
 jobs:
   run-test:
     uses: ./.github/workflows/run_test.yml
-    
+
   pypi-publish:
     needs: run-test
     runs-on: ubuntu-latest
-    
+    environment: release # Make sure this matches the environment name you set on PyPI
+
     steps:
     - name: Check out repository
       uses: actions/checkout@v3
-      
+
     - name: Extract release version
       id: release-version
       run: echo "::set-output name=version::${{ github.event.release.tag_name }}"
-      
+    
     - name: Update and validate version in pyproject.toml
       run: |
         # Replacing the placeholder version with the actual version from the tag
         sed -i "s/version = \"0.0.0\"/version = \"${{ steps.release-version.outputs.version }}\"/" pyproject.toml
         # Validate that the version follows semantic versioning
-        if ! echo "${{ steps.release-version.outputs.version }}" | grep -Pq '^\d+(\.\d+){2}'; then
+        if ! echo "${{ steps.release-version.outputs.version }}" | grep -Pq '^\d+(\.\d+){2}(-rc\.\d+)?$'; then
           echo "Invalid version format. Should be semantic versioning."
           exit 1
         fi
-      
+
     - name: Install Poetry
       uses: snok/install-poetry@v1.2
-      
+
     - name: Build Python package
       run: poetry build
-      
-    - name: Publish to PyPI
-      env:
-        PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-      run: poetry publish --username=__token__ --password=$PYPI_TOKEN
+
+    - name: Authenticate using OIDC
+      id: authenticate
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        oidc: true
+
+    - name: Publish to TestPyPI if release candidate
+      if: contains(steps.release-version.outputs.version, 'rc')
+      run: poetry publish --repository-url https://test.pypi.org/legacy/ --username=__token__ --password=${{ steps.authenticate.outputs.pypi_token }}
+
+    - name: Publish to PyPI if not release candidate
+      if: "!contains(steps.release-version.outputs.version, 'rc')"
+      run: poetry publish --username=__token__ --password=${{ steps.authenticate.outputs.pypi_token }}
+
+    - name: Validate package on TestPyPI
+      if: contains(steps.release-version.outputs.version, 'rc')
+      run: |
+        PACKAGE_NAME="gull-api"
+        PACKAGE_VERSION="${{ steps.release-version.outputs.version }}"
+        curl --head --fail "https://test.pypi.org/project/${PACKAGE_NAME}/${PACKAGE_VERSION}/"
 
     - name: Validate package on PyPI
+      if: "!contains(steps.release-version.outputs.version, 'rc')"
       run: |
         PACKAGE_NAME="gull-api"
         PACKAGE_VERSION="${{ steps.release-version.outputs.version }}"
