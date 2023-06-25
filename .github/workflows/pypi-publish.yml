@@ -27,7 +27,7 @@ jobs:
     - name: Update and validate version in pyproject.toml
       run: |
         # Replacing the placeholder version with the actual version from the tag
-        sed -i "s/version = \"VERSION_PLACEHOLDER\"/version = \"${{ steps.release-version.outputs.version }}\"/" pyproject.toml
+        sed -i "s/version = \"0.0.0\"/version = \"${{ steps.release-version.outputs.version }}\"/" pyproject.toml
         # Validate that the version follows semantic versioning
         if ! echo "${{ steps.release-version.outputs.version }}" | grep -Pq '^\d+(\.\d+){2}'; then
           echo "Invalid version format. Should be semantic versioning."

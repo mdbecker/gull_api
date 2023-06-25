@@ -3,7 +3,7 @@ requires = ["poetry-core"]
 
 [tool.poetry]
 name = "gull-api"
-version = "VERSION_PLACEHOLDER"
+version = "0.0.0"
 description = "A REST API for running Large Language Models"
 authors = ["Michael Becker <mdbecker@gmail.com>"]
 license = "MIT"
