@@ -1,6 +1,6 @@
 # GULL-API
 
-![Docker Publish](https://github.com/mdbecker/gull_api/actions/workflows/docker-publish.yml/badge.svg)
+![Docker Publish](https://github.com/mdbecker/gull_api/actions/workflows/docker-publish.yml/badge.svg?event=release)
 ![Test](https://github.com/mdbecker/gull_api/actions/workflows/test.yml/badge.svg)
 
 
