@@ -9,11 +9,10 @@ permissions:
   packages: write
 
 jobs:
-  test:
-    uses: ./.github/workflows/run_test.yml@main
+  run-test:
+    uses: ./.github/workflows/run_test.yml
     
   pypi-publish:
-    needs: [test]
     runs-on: ubuntu-latest
     
     steps:
