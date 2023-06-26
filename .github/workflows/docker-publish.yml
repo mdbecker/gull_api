@@ -15,46 +15,54 @@ jobs:
   docker-publish:
     needs: run-test
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-    - name: Extract release version
-      id: release-version
-      run: echo "::set-output name=version::${{ github.event.release.tag_name }}"
-      
-    - name: Update and validate version in pyproject.toml
-      run: |
-        # Replacing the placeholder version with the actual version from the tag
-        sed -i "s/version = \"0.0.0\"/version = \"${{ steps.release-version.outputs.version }}\"/" pyproject.toml
-        # Validate that the version follows semantic versioning
-        if ! echo "${{ steps.release-version.outputs.version }}" | grep -Pq '^\d+(\.\d+){2}(-rc\.\d+)?$'; then
-          echo "Invalid version format. Should be semantic versioning."
-          exit 1
-        fi
+      - name: Extract release version
+        id: release-version
+        run: echo "::set-output name=version::${{ github.event.release.tag_name }}"
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update version in pyproject.toml
+        run: sed -i "s/version = \"0.0.0\"/version = \"${{ steps.release-version.outputs.version }}\"/" pyproject.toml
 
-    - name: Extract metadata (tags, labels) for Docker
-      id: meta
-      uses: docker/metadata-action@v4
-      with:
-        images: ghcr.io/${{ github.repository_owner }}/gull-api
-        # Include release candidate tag if it's an RC version
-        tags: |
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}.{{patch}}-${{ steps.release-version.outputs.version }},value=rc
+      - name: Validate official version format
+        if: "!contains(steps.release-version.outputs.version, 'rc')"
+        run: |
+          if ! echo "${{ steps.release-version.outputs.version }}" | grep -Pq '^\d+(\.\d+){2}$'; then
+            echo "Invalid official version format. Should be semantic versioning."
+            exit 1
+          fi
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+      - name: Validate pre-release version format
+        if: "contains(steps.release-version.outputs.version, 'rc')"
+        run: |
+          if ! echo "${{ steps.release-version.outputs.version }}" | grep -Pq '^\d+(\.\d+){2}-rc\.\d+$'; then
+            echo "Invalid pre-release version format. Should be semantic versioning with pre-release tag."
+            exit 1
+          fi
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/gull-api
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}}-${{ steps.release-version.outputs.version }},value=rc
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

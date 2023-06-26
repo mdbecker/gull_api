@@ -16,9 +16,10 @@ jobs:
     needs: run-test
     runs-on: ubuntu-latest
     environment: release
-    
+
     permissions:
       id-token: write
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
@@ -27,11 +28,22 @@ jobs:
         id: release-version
         run: echo "::set-output name=version::${{ github.event.release.tag_name }}"
 
-      - name: Update and validate version in pyproject.toml
+      - name: Update version in pyproject.toml
+        run: sed -i "s/version = \"0.0.0\"/version = \"${{ steps.release-version.outputs.version }}\"/" pyproject.toml
+
+      - name: Validate official release version
+        if: "!contains(steps.release-version.outputs.version, 'rc')"
         run: |
-          sed -i "s/version = \"0.0.0\"/version = \"${{ steps.release-version.outputs.version }}\"/" pyproject.toml
-          if ! echo "${{ steps.release-version.outputs.version }}" | grep -Pq '^\d+(\.\d+){2}(-rc\.\d+)?$'; then
-            echo "Invalid version format. Should be semantic versioning."
+          if ! echo "${{ steps.release-version.outputs.version }}" | grep -Pq '^\d+(\.\d+){2}$'; then
+            echo "Invalid official release version format. Should be semantic versioning."
+            exit 1
+          fi
+
+      - name: Validate pre-release version
+        if: contains(steps.release-version.outputs.version, 'rc')
+        run: |
+          if ! echo "${{ steps.release-version.outputs.version }}" | grep -Pq '^\d+(\.\d+){2}-rc\.\d+$'; then
+            echo "Invalid pre-release version format. Should be semantic versioning with rc."
             exit 1
           fi
 
