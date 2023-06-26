@@ -16,6 +16,9 @@ jobs:
     needs: run-test
     runs-on: ubuntu-latest
     environment: release # Make sure this matches the environment name you set on PyPI
+    
+    permissions:
+      id-token: write
 
     steps:
     - name: Check out repository
