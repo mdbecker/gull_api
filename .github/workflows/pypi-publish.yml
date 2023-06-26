@@ -52,7 +52,7 @@ jobs:
 
     - name: Publish to TestPyPI if release candidate
       if: contains(steps.release-version.outputs.version, 'rc')
-      run: poetry publish --repository-url https://test.pypi.org/legacy/ --username=__token__ --password=${{ steps.authenticate.outputs.pypi_token }}
+      run: poetry publish --repository https://test.pypi.org/legacy/ --username=__token__ --password=${{ steps.authenticate.outputs.pypi_token }}
 
     - name: Publish to PyPI if not release candidate
       if: "!contains(steps.release-version.outputs.version, 'rc')"
