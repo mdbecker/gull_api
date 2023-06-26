@@ -3,6 +3,7 @@ import sqlalchemy
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
 import sqlalchemy.orm
 from sqlalchemy.exc import SQLAlchemyError
+from gull_api import config
 
 Base = sqlalchemy.orm.declarative_base()
 
@@ -15,16 +16,8 @@ class APIRequestLog(Base):
     error_occurred = Column(Boolean)
     error_details = Column(String)
 
-def load_db_config(filename="db_config.json"):
-    try:
-        with open(filename) as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {"db_uri": "sqlite:////app/data/database.db"}
-
 def get_engine():
-    db_config = load_db_config()
-    return create_engine(db_config.get("db_uri", "sqlite:///:memory:"))
+    return create_engine(config.DB_URI)
 
 def get_session_maker(engine=None):
     if engine is None:

@@ -5,6 +5,7 @@ import json
 import subprocess
 import asyncio
 from gull_api.db import APIRequestLog, SessionManager
+from gull_api import config
 
 app = FastAPI()
 
@@ -12,7 +13,7 @@ def get_single_key(dictionary: Dict[str, Any]) -> str:
     return list(dictionary.keys())[0]
 
 def load_cli_json():
-    with open("cli.json", "r") as f:
+    with open(config.CLI_JSON_PATH, "r") as f:
         return json.load(f)
 
 def create_llm_request_model(cli_json: Dict[str, Any]) -> BaseModel:

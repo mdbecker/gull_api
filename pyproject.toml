@@ -41,8 +41,12 @@ SQLAlchemy = "^2.0.16"
 fastapi = "^0.97.0"
 pydantic = "^1.10.9"
 uvicorn = "^0.22.0"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.3.2"
 pytest-asyncio = "^0.21.0"
 pytest-cov = "^4.1.0"
+
+[tool.poetry.scripts]
+gull-api = 'gull_api.run_gull_api:main'

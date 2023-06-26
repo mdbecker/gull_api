@@ -63,7 +63,19 @@ In test mode, an included script echo_args.sh is used instead of a real LLM. Thi
    poetry install
    ```
 
-4. Run the application:
+4. Configure Environment Variables (Optional):
+
+   `GULL-API` can be configured using environment variables. To do this, create a file named `.env` in the root of the project directory, and set the environment variables there. For example:
+
+   ```
+   DB_URI=sqlite:///mydatabase.db
+   CLI_JSON_PATH=/path/to/cli.json
+   ```
+
+   `GULL-API` uses the `python-dotenv` package to load these environment variables when the application starts.
+
+
+5. Run the application:
 
    ```
    uvicorn gull_api.main:app --host 0.0.0.0 --port 8000

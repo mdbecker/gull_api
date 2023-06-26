@@ -22,6 +22,9 @@ COPY gull_api/ ./gull_api
 # Copy the mock LLM cli app to the working directory
 COPY echo_args.sh ./
 
+# Copy the .env file to set the DB_URI for Docker
+COPY docker.env ./.env
+
 # Expose the port the app runs on
 EXPOSE 8000
 
