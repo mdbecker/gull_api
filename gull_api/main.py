@@ -105,27 +105,29 @@ async def handle_error(request, status_code, detail, stderr="", returncode=1):
     log = await create_and_log(request, stderr=stderr, returncode=returncode)
     raise HTTPException(status_code=status_code, detail=detail)
 
-# Updated post_llm function
 @app.post("/llm")
 async def post_llm(request: Dict[str, Any], cli_json=Depends(load_cli_json)):
     LLMRequest = create_llm_request_model(cli_json)
     validated_request = LLMRequest(**request)
     command = convert_request_to_cli_command(validated_request, cli_json)
     
+    return_code = None
+    
     try:
         process = await asyncio.create_subprocess_exec(*command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_bytes, stderr_bytes = await asyncio.wait_for(process.communicate(), timeout=60)
         stdout = stdout_bytes.decode("utf-8")
         stderr = stderr_bytes.decode("utf-8")
+        return_code = process.returncode
     except asyncio.TimeoutError:
-        await handle_error(request, status_code=504, detail="Server processing timed out.", returncode=process.returncode)
+        await handle_error(request, status_code=504, detail="Server processing timed out.", returncode=return_code)
     except Exception as e:
-        await handle_error(request, status_code=500, detail="Internal Server Error", stderr=str(e), returncode=process.returncode)
+        await handle_error(request, status_code=500, detail="Internal Server Error", stderr=str(e), returncode=return_code)
     else:
-        if process.returncode != 0:
-            await handle_error(request, status_code=422, detail=stderr, stderr=stderr, returncode=process.returncode)
+        if return_code != 0:
+            await handle_error(request, status_code=422, detail=stderr, stderr=stderr, returncode=return_code)
     
     # Logging successful response
-    await create_and_log(request, stdout=stdout, returncode=process.returncode)
+    await create_and_log(request, stdout=stdout, returncode=return_code)
     
     return {'response': stdout}
