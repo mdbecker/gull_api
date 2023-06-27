@@ -4,7 +4,8 @@ from gull_api.db import SessionManager, APIRequestLog
 from pydantic import BaseModel
 from typing import Dict, Any
 from unittest import mock
-import gull_api.main as main  # Import the main module, helps with mocking
+import gull_api.main as main
+import gull_api.config as config
 import json
 import pytest
 import subprocess
@@ -247,13 +248,12 @@ def test_convert_request_to_cli_command_with_non_bool():
     request = create_llm_request_model(cli_json)(test_param="value")
     assert convert_request_to_cli_command(request, cli_json) == ["./main", "--test", "value"]
 
-def test_convert_request_to_cli_command_with_executable():
+def test_convert_request_to_cli_command_with_executable(monkeypatch):
+    # Mock the EXECUTABLE config value
+    monkeypatch.setattr(config, 'EXECUTABLE', './custom_main')
+
     cli_json = {
         "LLaMA-7B": [
-            {
-                "name": "Executable",
-                "default": "./custom_main",
-            },
             {
                 "name": "test_param",
                 "type": "str",
@@ -262,6 +262,7 @@ def test_convert_request_to_cli_command_with_executable():
             }
         ]
     }
+
     request = create_llm_request_model(cli_json)(test_param="value")
     assert convert_request_to_cli_command(request, cli_json) == ["./custom_main", "--test", "value"]
 
@@ -274,68 +275,6 @@ mock_cli_json = {
 
 # Mocked request data
 mock_request = {"test_param": "test_value"}
-
-
-def test_get_api_with_executable():
-    expected_api_json = {
-        "LLaMA-7B": [
-            {
-                "name": "Instruct mode",
-                "type": "bool",
-                "default": False,
-                "description": "Run the program in instruction mode, which is particularly useful when working with Alpaca models."
-            },
-            {
-                "name": "Maximum length",
-                "type": "int",
-                "default": 128,
-                "description": "Set the number of tokens to predict when generating text. Adjusting this value can influence the length of the generated text.",
-                "min": 1,
-                "max": 2048,
-                "step": 10
-            },
-            {
-                "name": "Prompt",
-                "type": "str",
-                "required": True,
-                "description": "Provide a prompt"
-            },
-            {
-                "name": "Stop sequences",
-                "type": "str",
-                "description": "Specify one or multiple reverse prompts to pause text generation and switch to interactive mode."
-            },
-            {
-                "name": "Temperature",
-                "type": "float",
-                "default": 0.8,
-                "description": "Adjust the randomness of the generated text.",
-                "min": 0,
-                "max": 1,
-                "step": 0.01
-            },
-            {
-                "name": "Top P",
-                "type": "float",
-                "default": 0.9,
-                "description": "Limit the next token selection to a subset of tokens with a cumulative probability above a threshold P.",
-                "min": 0,
-                "max": 1,
-                "step": 0.01
-            }
-        ]
-    }
-
-    cli_json_with_executable = cli_json.copy()
-    cli_json_with_executable['LLaMA-7B'] = [
-            {
-                "default": "./echo_args.sh",
-                "hidden": True,
-                "name": "Executable",
-            },
-        ] + cli_json_with_executable['LLaMA-7B']
-    api_json = get_api(cli_json_with_executable)
-    assert api_json == expected_api_json
 
 
 sample_llm_request = {

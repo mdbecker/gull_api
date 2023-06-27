@@ -1,11 +1,6 @@
 {
     "LLaMA-7B": [
         {
-            "name": "Executable",
-            "hidden": true,
-            "default": "./echo_args.sh"
-        },
-        {
             "default": "models/7B/ggml-model.bin",
             "description": "Specify the path to the LLaMA model file (e.g., models/7B/ggml-model.bin).",
             "hidden": true,
